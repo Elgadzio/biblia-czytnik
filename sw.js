@@ -1,5 +1,5 @@
 ﻿// Cache the app shell so the chapter list and progress work offline.
-const CACHE = "biblia-v2";
+const CACHE = "biblia-v3";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(

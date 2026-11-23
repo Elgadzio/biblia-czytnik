@@ -123,9 +123,30 @@ svg{display:block}
 #reader .title span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .plain{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--accent);border-radius:10px;flex:none}
 .plain:active{background:var(--gold-soft)}
-.frame-wrap{flex:1;position:relative;overflow:hidden;background:#fff}
-/* deon shows its own 56px bottom nav bar – push it below the visible area */
-.frame-wrap iframe{position:absolute;left:0;top:0;width:100%;height:calc(100% + 56px);border:0;transition:opacity .2s}
+.frame-wrap{flex:1;position:relative;overflow:hidden;background:#fff;--z:1}
+/* deon shows its own 56px bottom nav bar – push it below the visible area.
+   Text size: the page is laid out narrower and scaled up (like pinch-zoom), its content is untouched. */
+.frame-wrap iframe{position:absolute;left:0;top:0;border:0;transition:opacity .2s;transform-origin:0 0;
+  width:calc(100% / var(--z));height:calc(100% / var(--z) + 56px);transform:scale(var(--z))}
+/* dark background: colours are only inverted on screen */
+.frame-wrap.dark{background:#000}
+.frame-wrap.dark iframe{filter:invert(1) hue-rotate(180deg)}
+@media (prefers-color-scheme: dark){
+  .frame-wrap.auto{background:#000}
+  .frame-wrap.auto iframe{filter:invert(1) hue-rotate(180deg)}
+}
+.panel{margin:0;border-radius:0;border-width:0 0 1px;box-shadow:none;padding:14px 18px;display:flex;flex-direction:column;gap:14px;animation:in .18s ease-out}
+.panel[hidden]{display:none}
+.panel .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:600}
+.stepper{display:flex;align-items:center;gap:4px;background:color-mix(in srgb,var(--line) 70%,transparent);border-radius:12px;padding:3px}
+.stepper button{width:44px;height:34px;border-radius:9px;font-family:var(--serif);font-weight:700;color:var(--accent);background:var(--card)}
+.stepper button:disabled{opacity:.35}
+.stepper span{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+.seg.small{margin:0}
+.seg.small button{padding:6px 10px;font-size:13px}
+.panel a{color:var(--accent);text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.aa{font-family:var(--serif);font-weight:700;font-size:17px}
+.aa.on{background:var(--gold-soft)}
 .loading{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:#9a8b78;font-size:14px;background:var(--bg)}
 .spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -218,9 +239,16 @@ h3.group{margin-top:8px}
   <div class="topbar">
     <button class="plain" id="readerBack" aria-label="Lista rozdziałów"><svg width="24" height="24"><use href="#i-back"/></svg></button>
     <div class="title"><b id="rTitle"></b><span id="rSub"></span></div>
-    <a class="plain" id="rExternal" target="_blank" rel="noopener" aria-label="Otwórz w Safari"><svg width="20" height="20"><use href="#i-ext"/></svg></a>
+    <button class="plain aa" id="rAa" aria-label="Wygląd tekstu">Aa</button>
   </div>
-  <div class="frame-wrap">
+  <div class="card panel" id="tPanel" hidden>
+      <div class="row"><span>Wielkość tekstu</span>
+        <div class="stepper"><button id="zMinus" aria-label="Mniejszy tekst" style="font-size:13px">A</button><span id="zVal">100%</span><button id="zPlus" aria-label="Większy tekst" style="font-size:19px">A</button></div></div>
+      <div class="row"><span>Tło</span>
+        <div class="seg small" id="themeSeg"><button data-v="auto">Auto</button><button data-v="light">Jasne</button><button data-v="dark">Ciemne</button></div></div>
+      <a id="rExternal" target="_blank" rel="noopener"><svg width="18" height="18"><use href="#i-ext"/></svg>Otwórz rozdział w Safari</a>
+  </div>
+  <div class="frame-wrap" id="rWrap">
     <div class="loading" id="rLoading"><div class="spin"></div>Wczytywanie rozdziału…</div>
     <iframe id="rFrame" title="Tekst rozdziału" referrerpolicy="no-referrer"></iframe>
   </div>
@@ -284,7 +312,7 @@ const TOTAL = BOOKS.reduce((s,b)=>s+b[2],0);
 
 // ---------- storage ----------
 const KEY = "biblia-bt-v1";
-let state = {read:{}, last:null, testament:"ST"}; // read: {"bookIdx:ch": timestamp}
+let state = {read:{}, last:null, testament:"ST", zoom:1, textTheme:"auto"}; // read: {"bookIdx:ch": timestamp}
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.read) state = Object.assign(state, s); } catch(e){}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 const k = (b,c)=>b+":"+c;
@@ -424,9 +452,27 @@ $("rMark").onclick = ()=>{
   toast(bookCount(b)===BOOKS[b][2] ? "Ukończono: "+BOOKS[b][1]+" ✨" : "Oznaczono "+BOOKS[b][0]+" "+c);
   if (nx) openReader(nx[0],nx[1]); else updateMark();
 };
-$("rPrev").onclick = ()=>{ const p=step(cur[0],cur[1],-1); if(p) openReader(p[0],p[1]); };
+// text appearance (only how the deon page is displayed: zoom + on-screen colour inversion)
+const ZOOMS = [0.9,1,1.15,1.3,1.5,1.75,2];
+function applyText(){
+  if (!ZOOMS.includes(state.zoom)) state.zoom = 1;
+  if (!["auto","light","dark"].includes(state.textTheme)) state.textTheme = "auto";
+  const w = $("rWrap"), i = ZOOMS.indexOf(state.zoom);
+  w.style.setProperty("--z", state.zoom);
+  w.classList.remove("auto","light","dark"); w.classList.add(state.textTheme);
+  $("zVal").textContent = Math.round(state.zoom*100)+"%";
+  $("zMinus").disabled = i===0; $("zPlus").disabled = i===ZOOMS.length-1;
+  document.querySelectorAll("#themeSeg button").forEach(b=>b.classList.toggle("on", b.dataset.v===state.textTheme));
+}
+$("rAa").onclick = ()=>{ const p=$("tPanel"); p.hidden=!p.hidden; $("rAa").classList.toggle("on",!p.hidden); };
+$("zMinus").onclick = ()=>{ const i=ZOOMS.indexOf(state.zoom); if(i>0){ state.zoom=ZOOMS[i-1]; save(); applyText(); } };
+$("zPlus").onclick = ()=>{ const i=ZOOMS.indexOf(state.zoom); if(i<ZOOMS.length-1){ state.zoom=ZOOMS[i+1]; save(); applyText(); } };
+document.querySelectorAll("#themeSeg button").forEach(b=>b.onclick=()=>{ state.textTheme=b.dataset.v; save(); applyText(); });
+applyText();
+
+$("rPrev").onclick =()=>{ const p=step(cur[0],cur[1],-1); if(p) openReader(p[0],p[1]); };
 $("rNext").onclick = ()=>{ const p=step(cur[0],cur[1],1); if(p) openReader(p[0],p[1]); };
-$("readerBack").onclick = ()=>{ $("rFrame").src="about:blank"; curBook=cur[0]; markMode=false; renderBook(); show("book"); };
+$("readerBack").onclick = ()=>{ $("rFrame").src="about:blank"; $("tPanel").hidden=true; $("rAa").classList.remove("on"); curBook=cur[0]; markMode=false; renderBook(); show("book"); };
 
 // ---------- nav / settings ----------
 document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{ if(b.dataset.back==="home") renderHome(); show(b.dataset.back); });
