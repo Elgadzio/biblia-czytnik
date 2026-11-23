@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biblia – czytanie</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Biblia">
+<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16130f" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#f6f1e7; --card:#fffdf8; --text:#2b2118; --muted:#8a7b6a; --line:#e8dfcf;
+  --accent:#7a2e2e; --accent-2:#5a1f22; --gold:#b8893b; --gold-soft:#f3e8d2;
+  --read:#4d7c55; --read-soft:#e4efe3;
+  --shadow:0 1px 2px rgba(60,40,20,.06),0 6px 20px rgba(60,40,20,.06);
+  --serif:"New York",ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --safe-top:env(safe-area-inset-top); --safe-bot:env(safe-area-inset-bottom);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#16130f; --card:#211c17; --text:#efe7da; --muted:#a39582; --line:#342c24;
+  --accent:#c9695c; --accent-2:#7a2e2e; --gold:#d9ad62; --gold-soft:#3a2f1f;
+  --read:#86c193; --read-soft:#1f3125; --shadow:0 1px 2px rgba(0,0,0,.3);}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.4 var(--sans);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+svg{display:block}
+.screen{display:none;min-height:100%}
+.screen.active{display:flex;flex-direction:column;animation:in .22s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.content{padding:0 18px calc(var(--safe-bot) + 28px);max-width:640px;width:100%;margin:0 auto}
+.serif{font-family:var(--serif)}
+
+/* ---------- headers ---------- */
+.hero{padding:calc(var(--safe-top) + 22px) 18px 14px;max-width:640px;width:100%;margin:0 auto;display:flex;align-items:flex-start}
+.hero .t{flex:1}
+.kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.hero h1{font-family:var(--serif);font-size:34px;line-height:1.1;margin:4px 0 0;font-weight:600;letter-spacing:-.01em}
+.round{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--accent);background:var(--card);box-shadow:var(--shadow)}
+.round:active{transform:scale(.94)}
+.topbar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  padding:calc(var(--safe-top) + 8px) 12px 8px;display:flex;align-items:center;gap:8px}
+.back{display:flex;align-items:center;gap:2px;color:var(--accent);font-size:16px;padding:8px 6px;border-radius:10px}
+.back:active{opacity:.6}
+
+/* ---------- progress card ---------- */
+.card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.stats{display:flex;align-items:center;gap:18px;padding:18px}
+.ring{position:relative;flex:none}
+.ring>svg{transform:rotate(-90deg)}
+.ring .bgc{stroke:var(--line)}
+.ring .fg{stroke:var(--read);stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.ring .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:600}
+.stats .num{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.1}
+.stats .num small{font-size:16px;color:var(--muted);font-weight:400}
+.stats .sub{color:var(--muted);font-size:14px;margin-top:3px}
+
+.continue{margin-top:14px;width:100%;border-radius:20px;padding:18px;text-align:left;color:#fbf3e6;
+  background:radial-gradient(120% 140% at 100% 0%,#9b4a3c 0%,var(--accent-2) 55%,#3e1517 100%);
+  box-shadow:0 8px 24px rgba(90,31,34,.28);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.continue::before{content:"";position:absolute;right:-18px;top:-22px;width:110px;height:110px;opacity:.10;
+  background:linear-gradient(#fff,#fff) center/14px 100% no-repeat,linear-gradient(#fff,#fff) center 38%/70% 14px no-repeat}
+.continue:active{transform:scale(.985)}
+.continue .l{flex:1;min-width:0}
+.continue .k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.75;font-weight:700}
+.continue .b{font-family:var(--serif);font-size:21px;font-weight:600;margin-top:4px;line-height:1.2}
+.continue .c{font-size:14px;opacity:.85;margin-top:2px}
+.continue .go{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none}
+
+/* ---------- testament switch ---------- */
+.seg{display:flex;background:color-mix(in srgb,var(--line) 70%,transparent);border-radius:12px;padding:3px;margin:24px 0 6px}
+.seg button{flex:1;padding:8px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted);transition:background .15s}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+.group{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:22px 6px 8px}
+.books{overflow:hidden}
+.book{display:flex;align-items:center;gap:14px;width:100%;padding:11px 14px;text-align:left;position:relative}
+.book+.book::before{content:"";position:absolute;top:0;left:66px;right:0;border-top:1px solid var(--line)}
+.book:active{background:var(--gold-soft)}
+.book .ring .lbl{font-family:var(--sans);font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:-.02em}
+.book.done .ring .lbl{color:var(--read)}
+.book .nm{flex:1;min-width:0}
+.book .nm b{display:block;font-family:var(--serif);font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.book .nm span{font-size:13px;color:var(--muted)}
+.book.done .nm span{color:var(--read);font-weight:600}
+.chev{color:var(--muted);opacity:.6;flex:none}
+
+/* ---------- book screen ---------- */
+.bookhead{text-align:center;padding:6px 0 18px}
+.bookhead h2{font-family:var(--serif);font-size:28px;margin:6px 0 4px;font-weight:600;line-height:1.15}
+.bookhead p{margin:0;color:var(--muted);font-size:14px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:12px auto 0;max-width:220px}
+.bar>i{display:block;height:100%;background:var(--read);border-radius:3px;transition:width .4s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:10px}
+.ch{aspect-ratio:1;border-radius:50%;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
+  font-family:var(--serif);font-weight:600;font-size:18px;display:flex;align-items:center;justify-content:center;position:relative;transition:transform .1s}
+.ch:active{transform:scale(.92)}
+.ch.read{background:var(--read);border-color:var(--read);color:#fff;box-shadow:none}
+@media (prefers-color-scheme: dark){.ch.read{color:#16130f}}
+.ch.last:not(.read){border:2px solid var(--gold);color:var(--gold)}
+.ch.last.read{outline:2px solid var(--gold);outline-offset:2px}
+.modebar{display:flex;justify-content:space-between;align-items:center;margin:0 2px 14px;font-size:14px;color:var(--muted)}
+.toggle{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text);font-size:14px}
+.sw{width:42px;height:26px;border-radius:13px;background:var(--line);position:relative;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.toggle.on .sw{background:var(--read)}
+.toggle.on .sw::after{transform:translateX(16px)}
+.hint{color:var(--muted);font-size:13px;margin:18px 4px 0;text-align:center}
+.link{color:var(--accent);font-weight:600}
+
+/* ---------- reader ---------- */
+#reader.active{position:fixed;inset:0;animation:none}
+#reader .topbar{position:static;border-bottom:1px solid var(--line);background:var(--bg)}
+#reader .title{flex:1;text-align:center;line-height:1.15;min-width:0}
+#reader .title b{display:block;font-family:var(--serif);font-size:19px;font-weight:600}
+#reader .title span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plain{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--accent);border-radius:10px;flex:none}
+.plain:active{background:var(--gold-soft)}
+.frame-wrap{flex:1;position:relative;overflow:hidden;background:#fff}
+/* deon shows its own 56px bottom nav bar – push it below the visible area */
+.frame-wrap iframe{position:absolute;left:0;top:0;width:100%;height:calc(100% + 56px);border:0;transition:opacity .2s}
+.loading{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:#9a8b78;font-size:14px;background:var(--bg)}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.bottom{display:flex;gap:10px;align-items:center;padding:10px 14px calc(var(--safe-bot) + 10px);border-top:1px solid var(--line);background:var(--bg)}
+.nav{width:48px;height:48px;border-radius:50%;background:var(--card);border:1px solid var(--line);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:var(--shadow)}
+.nav:active{transform:scale(.94)}
+.nav[disabled]{opacity:.35}
+.mark{flex:1;height:48px;border-radius:24px;font-weight:600;font-size:15px;color:#fbf3e6;
+  background:linear-gradient(135deg,#9b4a3c,var(--accent-2));display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(90,31,34,.25)}
+.mark:active{transform:scale(.98)}
+.mark.isread{background:var(--read-soft);color:var(--read);box-shadow:none;border:1px solid var(--read)}
+
+/* ---------- settings ---------- */
+.list{overflow:hidden;margin-bottom:10px}
+.list button,.list label{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:15px 16px;cursor:pointer}
+.list>*+*{border-top:1px solid var(--line)}
+.list .danger{color:#c0392b}
+.note{color:var(--muted);font-size:13px;margin:0 6px 24px;line-height:1.45}
+h3.group{margin-top:8px}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--safe-bot) + 92px);transform:translate(-50%,10px);
+  background:var(--text);color:var(--bg);padding:10px 18px;border-radius:22px;font-size:14px;font-weight:500;opacity:0;
+  transition:opacity .2s,transform .2s;pointer-events:none;z-index:50;white-space:nowrap}
+.toast.show{opacity:.94;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></g></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- HOME -->
+<section id="home" class="screen active">
+  <header class="hero">
+    <div class="t">
+      <div class="kicker">Biblia Tysiąclecia</div>
+      <h1>Pismo Święte</h1>
+    </div>
+    <button class="round" id="openSettings" aria-label="Ustawienia"><svg width="20" height="20"><use href="#i-gear"/></svg></button>
+  </header>
+  <div class="content">
+    <div class="card stats">
+      <div class="ring" id="mainRing"></div>
+      <div>
+        <div class="num" id="sumNum"></div>
+        <div class="sub" id="sumSub"></div>
+      </div>
+    </div>
+    <button class="continue" id="continueBtn">
+      <div class="l"><div class="k" id="contK">Czytaj dalej</div><div class="b" id="contB"></div><div class="c" id="contC"></div></div>
+      <div class="go"><svg width="20" height="20"><use href="#i-chev"/></svg></div>
+    </button>
+    <div class="seg" id="testTabs">
+      <button data-t="ST" class="on">Stary Testament</button>
+      <button data-t="NT">Nowy Testament</button>
+    </div>
+    <div id="bookList"></div>
+  </div>
+</section>
+
+<!-- BOOK -->
+<section id="book" class="screen">
+  <div class="topbar"><button class="back" data-back="home"><svg width="22" height="22"><use href="#i-back"/></svg>Księgi</button></div>
+  <div class="content">
+    <div class="bookhead">
+      <div class="kicker" id="bookKicker"></div>
+      <h2 id="bookTitle"></h2>
+      <p id="bookProg"></p>
+      <div class="bar"><i id="bookBar"></i></div>
+    </div>
+    <div class="modebar">
+      <span id="modeHint">Dotknij, aby czytać</span>
+      <button class="toggle" id="modeToggle">Zaznaczanie <span class="sw"></span></button>
+    </div>
+    <div class="grid" id="chGrid"></div>
+    <p class="hint" id="bookHint"></p>
+  </div>
+</section>
+
+<!-- READER -->
+<section id="reader" class="screen">
+  <div class="topbar">
+    <button class="plain" id="readerBack" aria-label="Lista rozdziałów"><svg width="24" height="24"><use href="#i-back"/></svg></button>
+    <div class="title"><b id="rTitle"></b><span id="rSub"></span></div>
+    <a class="plain" id="rExternal" target="_blank" rel="noopener" aria-label="Otwórz w Safari"><svg width="20" height="20"><use href="#i-ext"/></svg></a>
+  </div>
+  <div class="frame-wrap">
+    <div class="loading" id="rLoading"><div class="spin"></div>Wczytywanie rozdziału…</div>
+    <iframe id="rFrame" title="Tekst rozdziału" referrerpolicy="no-referrer"></iframe>
+  </div>
+  <div class="bottom">
+    <button class="nav" id="rPrev" aria-label="Poprzedni rozdział"><svg width="22" height="22"><use href="#i-back"/></svg></button>
+    <button class="mark" id="rMark"></button>
+    <button class="nav" id="rNext" aria-label="Następny rozdział"><svg width="22" height="22"><use href="#i-chev"/></svg></button>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="screen">
+  <div class="topbar"><button class="back" data-back="home"><svg width="22" height="22"><use href="#i-back"/></svg>Wróć</button></div>
+  <div class="content">
+    <div class="bookhead"><h2>Ustawienia</h2></div>
+    <h3 class="group">Kopia zapasowa</h3>
+    <div class="card list">
+      <button id="exportBtn"><svg width="20" height="20" style="color:var(--accent)"><use href="#i-up"/></svg>Eksportuj postęp</button>
+      <label><svg width="20" height="20" style="color:var(--accent)"><use href="#i-down"/></svg>Importuj postęp z pliku<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+    </div>
+    <p class="note">Postęp jest zapisany tylko na tym urządzeniu. Raz na jakiś czas zrób kopię i zachowaj ją np. w Plikach / iCloud.</p>
+    <div class="card list">
+      <button class="danger" id="resetBtn"><svg width="20" height="20"><use href="#i-trash"/></svg>Wyczyść wszystkie oznaczenia</button>
+    </div>
+    <p class="note" style="margin-top:28px;text-align:center">Tekst: Biblia Tysiąclecia, Wydawnictwo Pallottinum.<br>Rozdziały wyświetlane z serwisu biblia.deon.pl.</p>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// [skrót używany przez biblia.deon.pl, pełna nazwa, liczba rozdziałów]
+const BOOKS = [
+ ["Rdz","Księga Rodzaju",50],["Wj","Księga Wyjścia",40],["Kpł","Księga Kapłańska",27],["Lb","Księga Liczb",36],
+ ["Pwt","Księga Powtórzonego Prawa",34],["Joz","Księga Jozuego",24],["Sdz","Księga Sędziów",21],["Rt","Księga Rut",4],
+ ["1 Sm","1 Księga Samuela",31],["2 Sm","2 Księga Samuela",24],["1 Krl","1 Księga Królewska",22],["2 Krl","2 Księga Królewska",25],
+ ["1 Krn","1 Księga Kronik",29],["2 Krn","2 Księga Kronik",36],["Ezd","Księga Ezdrasza",10],["Ne","Księga Nehemiasza",13],
+ ["Tb","Księga Tobiasza",14],["Jdt","Księga Judyty",16],["Est","Księga Estery",10],["1 Mch","1 Księga Machabejska",16],
+ ["2 Mch","2 Księga Machabejska",15],["Hi","Księga Hioba",42],["Ps","Księga Psalmów",150],["Prz","Księga Przysłów",31],
+ ["Koh","Księga Koheleta",12],["Pnp","Pieśń nad Pieśniami",8],["Mdr","Księga Mądrości",19],["Syr","Mądrość Syracha",51],
+ ["Iz","Księga Izajasza",66],["Jr","Księga Jeremiasza",52],["Lm","Lamentacje",5],["Ba","Księga Barucha",6],
+ ["Ez","Księga Ezechiela",48],["Dn","Księga Daniela",14],["Oz","Księga Ozeasza",14],["Jl","Księga Joela",4],
+ ["Am","Księga Amosa",9],["Ab","Księga Abdiasza",1],["Jon","Księga Jonasza",4],["Mi","Księga Micheasza",7],
+ ["Na","Księga Nahuma",3],["Ha","Księga Habakuka",3],["So","Księga Sofoniasza",3],["Ag","Księga Aggeusza",2],
+ ["Za","Księga Zachariasza",14],["Ml","Księga Malachiasza",3],
+ ["Mt","Ewangelia wg św. Mateusza",28],["Mk","Ewangelia wg św. Marka",16],["Łk","Ewangelia wg św. Łukasza",24],
+ ["J","Ewangelia wg św. Jana",21],["Dz","Dzieje Apostolskie",28],["Rz","List do Rzymian",16],
+ ["1 Kor","1 List do Koryntian",16],["2 Kor","2 List do Koryntian",13],["Ga","List do Galatów",6],["Ef","List do Efezjan",6],
+ ["Flp","List do Filipian",4],["Kol","List do Kolosan",4],["1 Tes","1 List do Tesaloniczan",5],["2 Tes","2 List do Tesaloniczan",3],
+ ["1 Tm","1 List do Tymoteusza",6],["2 Tm","2 List do Tymoteusza",4],["Tt","List do Tytusa",3],["Flm","List do Filemona",1],
+ ["Hbr","List do Hebrajczyków",13],["Jk","List św. Jakuba",5],["1 P","1 List św. Piotra",5],["2 P","2 List św. Piotra",3],
+ ["1 J","1 List św. Jana",5],["2 J","2 List św. Jana",1],["3 J","3 List św. Jana",1],["Jud","List św. Judy",1],["Ap","Apokalipsa św. Jana",22]
+];
+// grupy ksiąg: [nazwa, indeks pierwszej, indeks za ostatnią]
+const GROUPS = {
+  ST:[["Pięcioksiąg",0,5],["Księgi historyczne",5,21],["Księgi mądrościowe",21,28],["Księgi prorockie",28,46]],
+  NT:[["Ewangelie",46,50],["Dzieje Apostolskie",50,51],["Listy św. Pawła",51,65],["Listy katolickie",65,72],["Apokalipsa",72,73]]
+};
+const groupOf = b => [...GROUPS.ST,...GROUPS.NT].find(g=>b>=g[1]&&b<g[2])[0];
+const TOTAL = BOOKS.reduce((s,b)=>s+b[2],0);
+
+// ---------- storage ----------
+const KEY = "biblia-bt-v1";
+let state = {read:{}, last:null, testament:"ST"}; // read: {"bookIdx:ch": timestamp}
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.read) state = Object.assign(state, s); } catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+const k = (b,c)=>b+":"+c;
+const isRead = (b,c)=>!!state.read[k(b,c)];
+function setRead(b,c,v){ if(v) state.read[k(b,c)] = Date.now(); else delete state.read[k(b,c)]; save(); }
+function bookCount(b){ let n=0; for(let c=1;c<=BOOKS[b][2];c++) if(isRead(b,c)) n++; return n; }
+
+// ---------- helpers ----------
+const $ = id=>document.getElementById(id);
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active", s.id===id));
+  window.scrollTo(0,0);
+}
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),1700); }
+function ring(size, stroke, frac, label){
+  const r=(size-stroke)/2, C=2*Math.PI*r;
+  return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}">
+    <circle class="bgc" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="${stroke}"/>
+    <circle class="fg" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="${stroke}" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" ${frac?"":'style="opacity:0"'}/>
+    </svg><div class="lbl">${label}</div></div>`;
+}
+const esc = s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function chWord(n){ return n===1?"rozdział":(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?"rozdziały":"rozdziałów"; }
+// biblia.deon.pl expects the "skrot" parameter in ISO-8859-2, not UTF-8
+function deonUrl(b,c){
+  const enc = (BOOKS[b][0]+" "+c).replace(/[^A-Za-z0-9]/g, ch => ({"Ł":"%A3","ł":"%B3"," ":"%20"})[ch] || encodeURIComponent(ch));
+  return "https://biblia.deon.pl/otworz.php?skrot=" + enc;
+}
+function step(b,c,d){ // next/prev chapter across books
+  c += d;
+  if (c < 1){ b--; if (b<0) return null; c = BOOKS[b][2]; }
+  else if (c > BOOKS[b][2]){ b++; if (b>=BOOKS.length) return null; c = 1; }
+  return [b,c];
+}
+function nextUnread(){
+  let p = state.last ? [state.last[0],state.last[1]] : [0,1];
+  if (state.last && isRead(p[0],p[1])) p = step(p[0],p[1],1);
+  for (let i=0; p && i<TOTAL; i++){ if(!isRead(p[0],p[1])) return p; p = step(p[0],p[1],1); }
+  for (let b=0;b<BOOKS.length;b++) for(let c=1;c<=BOOKS[b][2];c++) if(!isRead(b,c)) return [b,c];
+  return null;
+}
+
+// ---------- home ----------
+function renderHome(){
+  const n = Object.keys(state.read).length, frac = n/TOTAL;
+  const pct = frac>0 && frac<0.01 ? "<1%" : Math.floor(frac*100)+"%";
+  $("mainRing").outerHTML = ring(76,8,frac,`<span style="font-size:18px">${pct}</span>`).replace('class="ring"','class="ring" id="mainRing"');
+  $("sumNum").innerHTML = `${n} <small>z ${TOTAL}</small>`;
+  let booksDone = 0; BOOKS.forEach((b,i)=>{ if(bookCount(i)===b[2]) booksDone++; });
+  $("sumSub").textContent = `przeczytanych rozdziałów · ukończone księgi: ${booksDone} z 73`;
+
+  const nu = nextUnread();
+  if (nu){
+    $("contK").textContent = n||state.last ? "Czytaj dalej" : "Zacznij lekturę";
+    $("contB").textContent = BOOKS[nu[0]][1];
+    $("contC").textContent = "Rozdział " + nu[1];
+  } else {
+    $("contK").textContent = "Gratulacje"; $("contB").textContent = "Przeczytałeś całe Pismo Święte"; $("contC").textContent = "";
+  }
+  $("continueBtn").onclick = ()=>{ if(nu) openReader(nu[0],nu[1]); };
+
+  document.querySelectorAll("#testTabs button").forEach(bt=>bt.classList.toggle("on", bt.dataset.t===state.testament));
+  let html = "";
+  for (const [gname,from,to] of GROUPS[state.testament]){
+    html += `<div class="group">${gname}</div><div class="card books">`;
+    for (let i=from;i<to;i++){
+      const [ab,name,ch] = BOOKS[i], r = bookCount(i), done = r===ch;
+      const sub = done ? "Ukończona" : r ? `${r} z ${ch}` : `${ch} ${chWord(ch)}`;
+      html += `<button class="book${done?" done":""}" data-b="${i}">${ring(40,3.5,r/ch, done?'<svg width="16" height="16"><use href="#i-check"/></svg>':esc(ab))}
+        <span class="nm"><b>${esc(name)}</b><span>${sub}</span></span><svg class="chev" width="16" height="16"><use href="#i-chev"/></svg></button>`;
+    }
+    html += `</div>`;
+  }
+  $("bookList").innerHTML = html;
+  $("bookList").querySelectorAll(".book").forEach(el=>el.onclick=()=>openBook(+el.dataset.b));
+}
+document.querySelectorAll("#testTabs button").forEach(bt=>bt.onclick=()=>{ state.testament=bt.dataset.t; save(); renderHome(); });
+
+// ---------- book ----------
+let curBook = 0, markMode = false;
+function openBook(b){ curBook=b; markMode=false; renderBook(); show("book"); }
+function renderBook(){
+  const [ab,name,ch] = BOOKS[curBook], r = bookCount(curBook);
+  $("bookKicker").textContent = groupOf(curBook);
+  $("bookTitle").textContent = name;
+  $("bookProg").textContent = r===ch ? `Ukończona · ${ch} ${chWord(ch)}` : `Przeczytane ${r} z ${ch}`;
+  $("bookBar").style.width = (r/ch*100)+"%";
+  $("modeToggle").classList.toggle("on",markMode);
+  $("modeHint").textContent = markMode ? "Dotknij, aby oznaczyć" : "Dotknij, aby czytać";
+  const g = $("chGrid"); g.innerHTML="";
+  for (let c=1;c<=ch;c++){
+    const el = document.createElement("button");
+    el.className = "ch" + (isRead(curBook,c)?" read":"") + (state.last && state.last[0]===curBook && state.last[1]===c ? " last":"");
+    el.textContent = c;
+    el.onclick = ()=>{
+      if (markMode){ setRead(curBook,c,!isRead(curBook,c)); renderBook(); }
+      else openReader(curBook,c);
+    };
+    g.appendChild(el);
+  }
+  $("bookHint").innerHTML = markMode
+    ? `<button class="link" id="markAll">${r===ch?"Odznacz wszystkie rozdziały":"Oznacz całą księgę jako przeczytaną"}</button>`
+    : "";
+  const ma = $("markAll");
+  if (ma) ma.onclick = ()=>{ const v = r!==ch; for(let c=1;c<=ch;c++) setRead(curBook,c,v); renderBook(); };
+}
+$("modeToggle").onclick = ()=>{ markMode=!markMode; renderBook(); };
+
+// ---------- reader ----------
+let cur = [0,1];
+function openReader(b,c){
+  cur=[b,c]; state.last=[b,c]; save();
+  const url = deonUrl(b,c);
+  $("rTitle").textContent = BOOKS[b][0] + " " + c;
+  $("rSub").textContent = BOOKS[b][1];
+  $("rExternal").href = url;
+  const f = $("rFrame");
+  f.style.opacity = 0; $("rLoading").style.display = "";
+  f.onload = ()=>{ if (f.src!=="about:blank"){ f.style.opacity = 1; $("rLoading").style.display = "none"; } };
+  f.src = url;
+  $("rPrev").disabled = !step(b,c,-1);
+  $("rNext").disabled = !step(b,c,1);
+  updateMark();
+  show("reader");
+}
+function updateMark(){
+  const m = $("rMark"), r = isRead(cur[0],cur[1]);
+  m.classList.toggle("isread", r);
+  m.innerHTML = r ? `<svg width="18" height="18"><use href="#i-check"/></svg>Przeczytany`
+    : `<svg width="18" height="18"><use href="#i-check"/></svg>` + (step(cur[0],cur[1],1) ? "Przeczytane · dalej" : "Przeczytane");
+}
+$("rMark").onclick = ()=>{
+  const [b,c] = cur;
+  if (isRead(b,c)){ setRead(b,c,false); updateMark(); toast("Odznaczono "+BOOKS[b][0]+" "+c); return; }
+  setRead(b,c,true);
+  const nx = step(b,c,1);
+  toast(bookCount(b)===BOOKS[b][2] ? "Ukończono: "+BOOKS[b][1]+" ✨" : "Oznaczono "+BOOKS[b][0]+" "+c);
+  if (nx) openReader(nx[0],nx[1]); else updateMark();
+};
+$("rPrev").onclick = ()=>{ const p=step(cur[0],cur[1],-1); if(p) openReader(p[0],p[1]); };
+$("rNext").onclick = ()=>{ const p=step(cur[0],cur[1],1); if(p) openReader(p[0],p[1]); };
+$("readerBack").onclick = ()=>{ $("rFrame").src="about:blank"; curBook=cur[0]; markMode=false; renderBook(); show("book"); };
+
+// ---------- nav / settings ----------
+document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{ if(b.dataset.back==="home") renderHome(); show(b.dataset.back); });
+$("openSettings").onclick = ()=>show("settings");
+$("exportBtn").onclick = async ()=>{
+  const data = JSON.stringify({app:"biblia-bt",version:1,exported:new Date().toISOString(),read:state.read,last:state.last});
+  const name = "biblia-postep-"+new Date().toISOString().slice(0,10)+".json";
+  const file = new File([data], name, {type:"application/json"});
+  if (navigator.canShare && navigator.canShare({files:[file]})){
+    try { await navigator.share({files:[file], title:"Postęp czytania Biblii"}); return; } catch(e){ if(e.name==="AbortError") return; }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name; a.click();
+};
+$("importFile").onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if (!d.read || typeof d.read!=="object") throw 0;
+    if (!confirm("Zastąpić obecny postęp danymi z pliku ("+Object.keys(d.read).length+" rozdziałów)?")) return;
+    state.read = d.read; state.last = d.last||null; save(); toast("Zaimportowano"); renderHome(); show("home");
+  }catch(err){ alert("Nieprawidłowy plik kopii zapasowej."); }
+  e.target.value="";
+};
+$("resetBtn").onclick = ()=>{
+  if (confirm("Na pewno usunąć wszystkie oznaczenia przeczytanych rozdziałów?")){ state.read={}; state.last=null; save(); renderHome(); show("home"); toast("Wyczyszczono"); }
+};
+
+renderHome();
+if ("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
